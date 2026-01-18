@@ -1,0 +1,425 @@
+:root{
+    /* Let the OS/browser pick the scheme, but we also react to it in JS */
+    color-scheme: light dark;
+
+    /* Light */
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,.14);
+    --muted: rgba(0,0,0,.55);
+
+    --btn-bg: rgba(0,0,0,.06);
+    --btn-hover-bg: rgba(0,0,0,.10);
+    --btn-fg: #111827;
+
+    --btn-active-bg: #111827;
+    --btn-active-fg: #ffffff;
+
+    --danger-fg: #b91c1c;
+    --success-bg: #10b981;
+    --success-fg: #ffffff;
+
+    --canvas-bg: #ffffff;
+    --ink: #111827;
+
+    /* Tesla-ish geometry */
+    --radius: 18px;
+    --radius-sm: 12px;
+
+    /* Card depth */
+    --shadow: 0 18px 50px rgba(0,0,0,.12);
+
+    /* Inner highlight (set in dark too) */
+    --inner-highlight: rgba(255,255,255,.22);
+    --inner-ring: rgba(0,0,0,.06);
+}
+
+@media (prefers-color-scheme: dark){
+    :root{
+        /* Match calculator vibe + base background */
+        --bg: #181818;
+        --surface: #1f1f1f;
+
+        --border: rgba(255,255,255,.10);
+        --muted: rgba(255,255,255,.56);
+
+        --btn-bg: rgba(255,255,255,.07);
+        --btn-hover-bg: rgba(255,255,255,.11);
+        --btn-fg: rgba(255,255,255,.92);
+
+        --btn-active-bg: rgba(255,255,255,.92);
+        --btn-active-fg: #181818;
+
+        --danger-fg: #fb7185;
+        --success-bg: #10b981;
+        --success-fg: #062018;
+
+        /* Canvas: slightly darker than bg for "card" separation */
+        --canvas-bg: #141414;
+        --ink: rgba(255,255,255,.92);
+
+        /* Deeper shadow, less glow */
+        --shadow: 0 18px 50px rgba(0,0,0,.65);
+
+        /* Subtle Tesla-like inner highlights */
+        --inner-highlight: rgba(255,255,255,.10);
+        --inner-ring: rgba(255,255,255,.04);
+    }
+}
+
+*{ box-sizing:border-box; }
+html, body{ height:100%; }
+
+body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    background: var(--bg);
+    color: var(--btn-fg);
+}
+
+/* Full-page layout */
+.app{
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+}
+
+header{
+    position: sticky;
+    top: 0;
+    z-index: 10;
+
+    /* Tesla-ish glass header */
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border-bottom: 1px solid var(--border);
+}
+
+.header-inner{
+    max-width: 1400px;
+    margin: 0 auto;
+
+    /* Slightly taller header (more automotive UI) */
+    padding: 16px 16px;
+
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:900;
+    letter-spacing:.2px;
+}
+.dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background: var(--success-bg);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--success-bg) 22%, transparent);
+}
+
+.toolbar{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-left: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+button{
+    appearance:none;
+    border:1px solid var(--border);
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+
+    /* Tighter buttons (less webby) */
+    padding: 10px 14px;
+
+    border-radius: var(--radius-sm);
+    font-weight: 900;
+    cursor:pointer;
+
+    /* Tesla-like snappy but subtle */
+    transition: transform .05s ease, background .12s ease, opacity .12s ease, border-color .12s ease;
+    user-select:none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:hover{
+    background: var(--btn-hover-bg);
+}
+
+button:active{
+    transform: translateY(1px);
+    opacity: .98;
+}
+
+button[aria-pressed="true"]{
+    background: var(--btn-active-bg);
+    color: var(--btn-active-fg);
+    border-color: color-mix(in srgb, var(--btn-active-bg) 35%, var(--border));
+}
+
+/* Cleaner “Tesla minimal” danger + success */
+.btn-danger{
+    background: transparent;
+    color: var(--danger-fg);
+    border-color: color-mix(in srgb, var(--danger-fg) 28%, var(--border));
+}
+.btn-danger:hover{
+    background: color-mix(in srgb, var(--danger-fg) 10%, transparent);
+}
+
+.btn-success{
+    background: var(--success-bg);
+    color: var(--success-fg);
+    border-color: color-mix(in srgb, var(--success-bg) 70%, var(--border));
+}
+.btn-success:hover{
+    opacity: .95;
+}
+
+/* Tesla-ish control chip */
+label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    font-weight:900;
+    color: var(--btn-fg);
+
+    /* Slightly tighter to match buttons */
+    padding: 7px 10px;
+
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 75%, transparent);
+
+    min-width: 0;
+}
+
+/* Color tool should look exactly like "Size" label */
+.color-label{
+    /* inherits label base styles, but we ensure layout */
+    display:flex;
+    align-items:center;
+    gap:10px;
+    white-space: nowrap;
+}
+
+/* Presets line up like a compact inline group */
+.swatches{
+    display:flex;
+    gap:8px;
+    align-items:center;
+}
+
+/* Slightly tighter so it feels like an embedded control */
+.swatch{
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    cursor: pointer;
+
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--inner-ring) 65%, transparent);
+    transition: transform .06s ease, opacity .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.swatch:hover{
+    transform: translateY(-1px);
+    opacity: .98;
+}
+
+.swatch.is-active{
+    border-color: color-mix(in srgb, var(--ink) 55%, var(--border));
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--ink) 18%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--inner-ring) 65%, transparent);
+}
+
+/* Color input: small, flush with label container */
+.color-picker{
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Make the native color well look clean */
+.color-picker::-webkit-color-swatch-wrapper{ padding: 2px; }
+.color-picker::-webkit-color-swatch{
+    border: 0;
+    border-radius: 8px;
+}
+.color-picker::-moz-color-swatch{
+    border: 0;
+    border-radius: 8px;
+}
+
+input[type="range"]{
+    width: 200px;
+    accent-color: color-mix(in srgb, var(--ink) 80%, var(--success-bg));
+}
+
+/* Keep status + attribution on the far right, stacked, minimal space */
+.right-stack{
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    line-height: 1.05;
+    min-width: 0;
+    flex: 0 0 auto;
+}
+
+.status{
+    margin-left: 0;
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.attribution{
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 800;
+    opacity: .9;
+    white-space: nowrap;
+    margin-left: 0;
+}
+
+.attribution a{
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted color-mix(in srgb, var(--muted) 60%, transparent);
+}
+
+.attribution a:hover{
+    border-bottom-style: solid;
+}
+
+main{
+    flex:1;
+    display:flex;
+    min-height: 0; /* allow canvas to fill */
+}
+
+.canvas-shell{
+    flex:1;
+    display:flex;
+    padding: 12px;
+    min-height: 0;
+}
+
+.canvas-frame{
+    flex: 1;
+    border:1px solid var(--border);
+    border-radius: var(--radius);
+    overflow:hidden;
+    background: var(--canvas-bg);
+    min-height: 0;
+
+    /* Tesla card depth */
+    box-shadow: var(--shadow);
+
+    /* Subtle inner ring */
+    box-shadow:
+      var(--shadow),
+      inset 0 0 0 1px var(--inner-ring);
+
+    position: relative;
+}
+
+/* Subtle top-edge highlight (very Tesla-ish) */
+.canvas-frame::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    border-radius: inherit;
+
+    /* faint highlight at the top edge */
+    background:
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--inner-highlight) 65%, transparent),
+        transparent 22%
+      );
+    opacity: .9;
+}
+
+canvas{
+    width:100%;
+    height:100%;
+    display:block;
+    touch-action:none;
+    background: var(--canvas-bg);
+}
+
+/* Small screens: extra polish
+   - Brand goes on top
+   - Tools go below (no "two columns")
+   - Tighter header padding + dot size for more canvas space
+*/
+@media (max-width: 720px){
+  .header-inner{
+    flex-direction: column;
+    align-items: stretch;   /* brand + toolbar full width */
+    padding: 12px 14px;     /* tighter than desktop */
+    gap: 10px;
+  }
+
+  .brand{
+    width: 100%;
+    justify-content: flex-start;
+    font-size: 16px;
+    line-height: 1.1;
+  }
+
+  .dot{
+    width: 8px;
+    height: 8px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--success-bg) 22%, transparent);
+  }
+
+  .toolbar{
+    width: 100%;
+    margin-left: 0;         /* remove desktop offset */
+  }
+
+  .size-label,
+  .color-label{
+    width:100%;
+    justify-content:space-between;
+  }
+
+  input[type="range"]{ width: 55vw; max-width: 280px; }
+
+  .color-label .swatches{
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  .right-stack{
+    width:100%;
+    align-items:flex-start;
+    margin-left: 0;
+  }
+}

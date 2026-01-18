@@ -1,0 +1,214 @@
+:root{
+  color-scheme: light dark;
+
+  --calc-bg: #ffffff;
+  --calc-surface: #ffffff;
+  --calc-border: rgba(0,0,0,.14);
+  --calc-muted: rgba(0,0,0,.55);
+  --calc-text: #111827;
+
+  --calc-btn: rgba(0,0,0,.06);
+  --calc-btn-hover: rgba(0,0,0,.10);
+  --calc-accent: #10b981;
+
+  --calc-display-bg: rgba(0,0,0,.05);
+
+  --calc-shadow: 0 18px 50px rgba(0,0,0,.20);
+  --calc-radius: 16px;
+
+  --calc-font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    /* Newest Tesla UI vibe: neutral graphite/charcoal (no blue cast) */
+    --calc-bg: #0f1012;        /* near-black graphite */
+    --calc-surface: #1a1b1e;   /* charcoal panel */
+
+    /* Subtle separators */
+    --calc-border: rgba(255,255,255,.10);
+
+    /* Text + muted */
+    --calc-text: rgba(255,255,255,.92);
+    --calc-muted: rgba(255,255,255,.56);
+
+    /* Buttons: subtle, modern */
+    --calc-btn: rgba(255,255,255,.07);
+    --calc-btn-hover: rgba(255,255,255,.11);
+
+    /* Input/display inset */
+    --calc-display-bg: rgba(255,255,255,.05);
+
+    /* Shadow: deeper, less glowy */
+    --calc-shadow: 0 18px 50px rgba(0,0,0,.65);
+
+    /* Accent */
+    --calc-accent: #10b981;
+  }
+}
+
+/* Floating launcher button */
+.calc-fab{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: 1px solid var(--calc-border);
+  background: var(--calc-surface);
+  color: var(--calc-text);
+  box-shadow: var(--calc-shadow);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--calc-font);
+  -webkit-tap-highlight-color: transparent;
+
+  /* IMPORTANT: smooth pointer dragging on touch */
+  touch-action: none;
+}
+.calc-fab:active{ transform: translateY(1px); }
+.calc-fab svg{ width: 22px; height: 22px; opacity: .9; }
+
+/* Panel */
+.calc-panel{
+  position: fixed;
+  right: 16px;
+  bottom: 76px;
+  z-index: 2147483647;
+  width: 320px;
+  border-radius: var(--calc-radius);
+  border: 1px solid var(--calc-border);
+  background: var(--calc-surface);
+  color: var(--calc-text);
+  box-shadow: var(--calc-shadow);
+  overflow: hidden;
+  font-family: var(--calc-font);
+  -webkit-tap-highlight-color: transparent;
+}
+.calc-panel[hidden]{ display:none; }
+
+.calc-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--calc-border);
+}
+.calc-title{
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+.calc-spacer{ flex:1; }
+.calc-close{
+  border: 1px solid var(--calc-border);
+  background: transparent;
+  color: var(--calc-text);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.calc-display{
+  padding: 12px;
+  border-bottom: 1px solid var(--calc-border);
+}
+.calc-expr{
+  width: 100%;
+  border: 1px solid var(--calc-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--calc-display-bg);
+  color: var(--calc-text);
+  font-size: 18px;
+  outline: none;
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;          /* Firefox */
+}
+.calc-expr::-webkit-scrollbar{
+  height: 6px;                    /* Chrome/Safari */
+}
+@media (max-width: 420px){
+  .calc-expr{ font-size: 16px; }
+}
+.calc-subrow{
+  margin-top: 10px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.calc-status{
+  color: var(--calc-muted);
+  font-size: 13px;
+  min-height: 16px;
+}
+.calc-result{
+  font-weight: 800;
+  font-size: 14px;
+  color: color-mix(in srgb, var(--calc-text) 85%, var(--calc-accent));
+}
+
+/* Keys */
+.calc-keys{
+  padding: 12px;
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.calc-key{
+  border: 1px solid var(--calc-border);
+  background: var(--calc-btn);
+  color: var(--calc-text);
+  border-radius: 14px;
+  padding: 12px 0;
+  font-size: 16px;
+  font-weight: 800;
+  cursor:pointer;
+  user-select:none;
+}
+.calc-key:hover{ background: var(--calc-btn-hover); }
+.calc-key:active{ transform: translateY(1px); }
+
+.calc-key.op{
+  background: color-mix(in srgb, var(--calc-btn) 55%, var(--calc-accent) 10%);
+}
+.calc-key.eq{
+  background: var(--calc-accent);
+  color: #062018;
+  border-color: color-mix(in srgb, var(--calc-accent) 75%, var(--calc-border));
+}
+.calc-key.danger{
+  background: color-mix(in srgb, #ef4444 18%, var(--calc-btn));
+  border-color: color-mix(in srgb, #ef4444 25%, var(--calc-border));
+}
+
+@media (max-width: 420px){
+  .calc-panel{ width: calc(100vw - 24px); right: 12px; }
+  .calc-fab{ right: 12px; bottom: 12px; }
+}
+
+/* Make header feel draggable */
+.calc-header{
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+
+  /* Improves pointer dragging behavior (especially on mobile/touch) */
+  touch-action: none;
+}
+
+.calc-header:active{
+  cursor: grabbing;
+}
+
+/* Optional: while dragging, prevent text selection */
+.calc-panel.is-dragging,
+.calc-fab.is-dragging{
+  user-select: none;
+  -webkit-user-select: none;
+}
