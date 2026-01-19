@@ -50,7 +50,7 @@ This project is part of the **VatioLibre.com** community and is shared for **edu
 
 ### Requirements
 
-* Node.js 18+ recommended
+* Node.js 24+ recommended
 * npm (or pnpm/yarn if you prefer)
 
 ### Install
