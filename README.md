@@ -110,12 +110,7 @@ Contributions are welcome—especially bug fixes, UI improvements, and Tesla/in-
 
 ## License
 
-Choose one:
-
-* **MIT License** (recommended for open educational projects), or
-* Another license that fits your goals.
-
-> If you want, I can generate an MIT `LICENSE` file for you and add the badge at the top of the README.
+* **MIT License**
 
 ---
 
