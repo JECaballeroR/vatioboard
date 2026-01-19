@@ -25,7 +25,7 @@ createCalculatorWidget({ button: openCalcBtn, floating: true });
     const LS_INK_RAW = "vatio_board_ink_raw";
 
     function isDarkMode(){
-    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
 
     let inkRaw =
@@ -52,29 +52,29 @@ createCalculatorWidget({ button: openCalcBtn, floating: true });
 
 
     function setPopupFromInkRaw(){
-    const rgb = hexToRgb(inkRaw) || { r: 17, g: 24, b: 39 };
-    if (rRange) rRange.value = String(rgb.r);
-    if (gRange) gRange.value = String(rgb.g);
-    if (bRange) bRange.value = String(rgb.b);
-    if (rVal) rVal.textContent = String(rgb.r);
-    if (gVal) gVal.textContent = String(rgb.g);
-    if (bVal) bVal.textContent = String(rgb.b);
-    if (hexInput) hexInput.value = inkRaw;
+      const rgb = hexToRgb(inkRaw) || { r: 17, g: 24, b: 39 };
+      if (rRange) rRange.value = String(rgb.r);
+      if (gRange) gRange.value = String(rgb.g);
+      if (bRange) bRange.value = String(rgb.b);
+      if (rVal) rVal.textContent = String(rgb.r);
+      if (gVal) gVal.textContent = String(rgb.g);
+      if (bVal) bVal.textContent = String(rgb.b);
+      if (hexInput) hexInput.value = inkRaw;
     }
 
     function setInkFromSliders(){
-    const r = parseInt(rRange?.value || "0", 10);
-    const g = parseInt(gRange?.value || "0", 10);
-    const b = parseInt(bRange?.value || "0", 10);
+      const r = parseInt(rRange?.value || "0", 10);
+      const g = parseInt(gRange?.value || "0", 10);
+      const b = parseInt(bRange?.value || "0", 10);
 
-    if (rVal) rVal.textContent = String(r);
-    if (gVal) gVal.textContent = String(g);
-    if (bVal) bVal.textContent = String(b);
+      if (rVal) rVal.textContent = String(r);
+      if (gVal) gVal.textContent = String(g);
+      if (bVal) bVal.textContent = String(b);
 
-    const hex = rgbToHex({ r, g, b });
-    if (hexInput) hexInput.value = hex;
-      setInkRaw(hex);
-    }
+      const hex = rgbToHex({ r, g, b });
+      if (hexInput) hexInput.value = hex;
+        setInkRaw(hex);
+      }
 
     function openColorPopup(){
       setPopupFromInkRaw();
@@ -84,7 +84,7 @@ createCalculatorWidget({ button: openCalcBtn, floating: true });
     }
 
     function closeColorPopup(){
-    if (colorPopup) colorPopup.hidden = true;
+      if (colorPopup) colorPopup.hidden = true;
     }
 
     colorChipBtn?.addEventListener("click", openColorPopup);
