@@ -39,6 +39,8 @@ const translations = {
 
     // Calculator
     calcTitle: 'Calculator',
+    history: 'History',
+    noHistory: 'No history yet',
 
     // Errors
     error: 'Error',
@@ -88,6 +90,8 @@ const translations = {
 
     // Calculator
     calcTitle: 'Calculadora',
+    history: 'Historial',
+    noHistory: 'Sin historial',
 
     // Errors
     error: 'Error',

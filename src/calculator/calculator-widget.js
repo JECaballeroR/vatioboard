@@ -1,5 +1,6 @@
 import { el } from "./dom.js";
 import { CalcCore } from "./calc-core.js";
+import { loadHistory, clearHistory } from "./storage.js";
 import { t } from "../i18n.js";
 
 /**
@@ -112,19 +113,36 @@ export function createCalculatorWidget(options = {}) {
     el(
       "div",
       { class: "calc-display" },
+      el(
+        "div",
+        { class: "calc-history-row" },
+        el("button", {
+          class: "calc-history-btn",
+          type: "button",
+          "aria-label": t("history"),
+          html: `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>`
+        }),
+        el("div", { class: "calc-history-text" })
+      ),
       el("input", {
         class: "calc-expr",
         type: "text",
         inputmode: isTouchLike ? "none" : "decimal",
         autocomplete: "off",
         spellcheck: "false",
-      }),
-      el(
-        "div",
-        { class: "calc-subrow" },
-        el("div", { class: "calc-status" }),
-        el("div", { class: "calc-result" })
-      )
+      })
+    ),
+    el(
+      "div",
+      { class: "calc-history-sheet", hidden: true },
+      el("div", { class: "calc-history-sheet-header" },
+        el("span", {}, t("history")),
+        el("button", { class: "calc-history-clear", type: "button" }, t("clear"))
+      ),
+      el("div", { class: "calc-history-list" })
     ),
     el("div", { class: "calc-keys" })
   );
@@ -149,11 +167,55 @@ export function createCalculatorWidget(options = {}) {
     exprInput.addEventListener("focus", () => exprInput.blur());
   }
 
-  const statusEl = panel.querySelector(".calc-status");
-  const resultEl = panel.querySelector(".calc-result");
+  const historyEl = panel.querySelector(".calc-history-text");
+  const historyBtn = panel.querySelector(".calc-history-btn");
+  const historySheet = panel.querySelector(".calc-history-sheet");
+  const historyList = panel.querySelector(".calc-history-list");
+  const historyClearBtn = panel.querySelector(".calc-history-clear");
   const closeBtn = panel.querySelector(".calc-close");
   const keys = panel.querySelector(".calc-keys");
   const header = panel.querySelector(".calc-header");
+
+  function renderHistoryList() {
+    const history = loadHistory();
+    historyList.innerHTML = "";
+    if (history.length === 0) {
+      historyList.appendChild(el("div", { class: "calc-history-empty" }, t("noHistory")));
+      return;
+    }
+    for (const item of history) {
+      const row = el(
+        "button",
+        { class: "calc-history-item", type: "button" },
+        el("span", { class: "calc-history-item-expr" }, item.expr),
+        el("span", { class: "calc-history-item-result" }, item.result)
+      );
+      row.addEventListener("click", () => {
+        core.setExpr(item.result);
+        core.status = item.expr;
+        render();
+        historySheet.hidden = true;
+      });
+      historyList.appendChild(row);
+    }
+  }
+
+  historyBtn.addEventListener("click", () => {
+    renderHistoryList();
+    historySheet.hidden = !historySheet.hidden;
+  });
+
+  historyClearBtn.addEventListener("click", () => {
+    clearHistory();
+    renderHistoryList();
+  });
+
+  panel.addEventListener("click", (e) => {
+    if (historySheet.hidden) return;
+    if (!historySheet.contains(e.target) && !historyBtn.contains(e.target)) {
+      historySheet.hidden = true;
+    }
+  });
 
   // Apply stored panel position (if any)
   {
@@ -328,8 +390,7 @@ export function createCalculatorWidget(options = {}) {
 
   function render({ keepEnd = false } = {}) {
     exprInput.value = core.expr ?? "";
-    statusEl.textContent = core.status ?? "";
-    resultEl.textContent = core.lastResult ? `Ans: ${core.lastResult}` : "";
+    historyEl.textContent = core.status ?? "";
 
     if (keepEnd) keepInputEndVisible(exprInput);
   }
@@ -411,10 +472,17 @@ export function createCalculatorWidget(options = {}) {
     if (!isTouchLike) exprInput.focus({ preventScroll: true });
   }
 
-  const layout = [
-    { t: "C", cls: "danger", on: () => act(() => core.clear()) },
-    { t: "⌫", cls: "", on: () => act(() => core.backspace()) },
+  const secondaryLayout = [
+    { t: "√", cls: "op", on: () => act(() => core.sqrtTrailingNumber()) },
+    { t: "x²", cls: "op", on: () => act(() => core.squareTrailingNumber()) },
     { t: "±", cls: "op", on: () => act(() => core.toggleSign()) },
+    { t: "⌫", cls: "", on: () => act(() => core.backspace()) },
+  ];
+
+  const layout = [
+    { t: "AC", cls: "danger", on: () => act(() => core.clear()) },
+    { t: "()", cls: "op", on: () => pushToken(core.smartParen()) },
+    { t: "%", cls: "op", on: () => pushToken("%") },
     { t: "÷", cls: "op", on: () => pushToken("÷") },
 
     { t: "7", on: () => pushToken("7") },
@@ -432,18 +500,23 @@ export function createCalculatorWidget(options = {}) {
     { t: "3", on: () => pushToken("3") },
     { t: "+", cls: "op", on: () => pushToken("+") },
 
-    { t: "0", on: () => pushToken("0") },
+    { t: "0", cls: "zero", on: () => pushToken("0") },
     { t: ".", on: () => pushToken(".") },
-    { t: "%", cls: "op", on: () => pushToken("%") },
     { t: "=", cls: "eq", on: () => doEval() },
-
-    { t: "√", cls: "op", on: () => act(() => core.sqrtTrailingNumber()) },
-    { t: "(", cls: "op", on: () => pushToken("(") },
-    { t: ")", cls: "op", on: () => pushToken(")") },
-    { t: t("close"), cls: "", on: () => close() },
   ];
 
-  // build keys
+  const secondaryKeys = el("div", { class: "calc-secondary-keys" });
+  for (const k of secondaryLayout) {
+    secondaryKeys.appendChild(
+      el(
+        "button",
+        { type: "button", class: `calc-key calc-key-secondary ${k.cls || ""}`.trim(), onclick: k.on },
+        k.t
+      )
+    );
+  }
+  keys.before(secondaryKeys);
+
   for (const k of layout) {
     keys.appendChild(
       el(
