@@ -8,6 +8,7 @@ import { buildKeypad } from "./widget/keypad.js";
 import { clampElementToViewport, makePanelDraggable, makeLauncherDraggable } from "./widget/drag.js";
 import { initSettingsSheet } from "./widget/settings-sheet.js";
 import { toRaw, toDisplay, mapCursorPosition } from "./widget/number-format.js";
+import { IconCalculator } from "../icons.js";
 
 /**
  * createCalculatorWidget(options)
@@ -63,14 +64,6 @@ export function createCalculatorWidget(options = {}) {
       // ignore
     }
   }
-
-  const iconSvg = `
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6"/>
-      <path d="M7 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      <path d="M8 11h2M12 11h2M16 11h0M8 14h2M12 14h2M16 14h0M8 17h2M12 17h2M16 17h0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-    </svg>
-  `;
 
   const {
     panel,
@@ -300,7 +293,7 @@ export function createCalculatorWidget(options = {}) {
       type: "button",
       class: "calc-fab",
       "aria-label": t("openCalculator"),
-      html: iconSvg,
+      html: IconCalculator,
     });
 
     // Apply stored launcher position (if any)
