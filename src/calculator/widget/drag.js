@@ -115,7 +115,7 @@ export function makePanelDraggable({ panel, header, dragThresholdPx, savePos, lo
   }
 
   header.addEventListener("pointerdown", (e) => {
-    if (e.target?.closest?.(".calc-close")) return;
+    if (e.target?.closest?.(".calc-close, .calc-settings-btn")) return;
 
     // Mouse: left button only
     if (e.pointerType === "mouse" && e.button !== 0) return;

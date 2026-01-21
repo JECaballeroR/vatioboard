@@ -1,23 +1,12 @@
 import { el } from "../dom.js";
+import { formatNumber } from "./number-format.js";
 
 const HISTORY_RESULT_MAX_LEN = 10;
 
-function formatHistoryResult(value, maxLen = HISTORY_RESULT_MAX_LEN) {
-  const raw = String(value ?? "");
-  if (raw.length <= maxLen) return raw;
-
-  const num = Number(raw);
-  if (!Number.isFinite(num)) return raw.slice(0, maxLen);
-
-  for (let precision = maxLen; precision >= 1; precision -= 1) {
-    let candidate = num.toPrecision(precision);
-    if (!/[eE]/.test(candidate)) {
-      candidate = candidate.replace(/\.?0+$/, "");
-    }
-    if (candidate.length <= maxLen) return candidate;
-  }
-
-  return raw.slice(0, maxLen);
+function formatHistoryResult(value, settings, maxLen = HISTORY_RESULT_MAX_LEN) {
+  const formatted = formatNumber(value, settings);
+  if (formatted.length <= maxLen) return formatted;
+  return formatted.slice(0, maxLen);
 }
 
 export function initHistorySheet({
@@ -28,6 +17,8 @@ export function initHistorySheet({
   historyList,
   historyClearBtn,
   render,
+  settings,
+  onOpen,
   t,
   loadHistory,
   clearHistory,
@@ -38,6 +29,7 @@ export function initHistorySheet({
       historySheet.hidden = false;
       historySheet.setAttribute("aria-hidden", "false");
       requestAnimationFrame(() => historySheet.classList.add("is-open"));
+      onOpen?.();
       return;
     }
 
@@ -70,7 +62,7 @@ export function initHistorySheet({
         el(
           "span",
           { class: "calc-history-item-result" },
-          formatHistoryResult(item.result)
+          formatHistoryResult(item.result, settings)
         )
       );
 
@@ -101,5 +93,5 @@ export function initHistorySheet({
     }
   });
 
-  return { setHistorySheetOpen };
+  return { setHistorySheetOpen, refreshHistoryList: renderHistoryList };
 }

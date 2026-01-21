@@ -1,6 +1,11 @@
 const KEY = "embeddable_calc_state_v1";
 const HISTORY_KEY = "embeddable_calc_history_v1";
+const SETTINGS_KEY = "embeddable_calc_settings_v1";
 const MAX_HISTORY = 7;
+const DEFAULT_SETTINGS = {
+  decimals: 8,
+  thousandSeparator: "",
+};
 
 export function loadState() {
   try {
@@ -52,3 +57,30 @@ export function clearHistory() {
   saveHistory([]);
   return [];
 }
+
+export function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    const stored = raw ? JSON.parse(raw) : null;
+    const decimals = Number.isFinite(Number(stored?.decimals))
+      ? Number(stored.decimals)
+      : DEFAULT_SETTINGS.decimals;
+    const thousandSeparator =
+      typeof stored?.thousandSeparator === "string"
+        ? stored.thousandSeparator
+        : DEFAULT_SETTINGS.thousandSeparator;
+    return { ...DEFAULT_SETTINGS, decimals, thousandSeparator };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+export function saveSettings(settings) {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // ignore
+  }
+}
+
+export { DEFAULT_SETTINGS };
