@@ -2,6 +2,10 @@ import { el } from "./dom.js";
 import { CalcCore } from "./calc-core.js";
 import { loadHistory, clearHistory } from "./storage.js";
 import { t } from "../i18n.js";
+import { buildPanel } from "./widget/panel.js";
+import { initHistorySheet } from "./widget/history-sheet.js";
+import { buildKeypad } from "./widget/keypad.js";
+import { clampElementToViewport, makePanelDraggable, makeLauncherDraggable } from "./widget/drag.js";
 
 /**
  * createCalculatorWidget(options)
@@ -40,10 +44,6 @@ export function createCalculatorWidget(options = {}) {
   const POS_KEY = "embeddable_calc_pos_v1";
   const DRAG_THRESHOLD_PX = 6;
 
-  function clamp(n, min, max) {
-    return Math.max(min, Math.min(max, n));
-  }
-
   function loadPos() {
     try {
       const raw = localStorage.getItem(POS_KEY);
@@ -61,37 +61,6 @@ export function createCalculatorWidget(options = {}) {
     }
   }
 
-  function ensureFixedTopLeft(elm) {
-    // Convert an element to fixed top/left positioning (from right/bottom)
-    const r = elm.getBoundingClientRect();
-    const left = elm.style.left ? parseFloat(elm.style.left) : r.left;
-    const top = elm.style.top ? parseFloat(elm.style.top) : r.top;
-
-    elm.style.position = "fixed";
-    elm.style.left = `${left}px`;
-    elm.style.top = `${top}px`;
-    elm.style.right = "auto";
-    elm.style.bottom = "auto";
-  }
-
-  function clampElementToViewport(elm, margin = 8) {
-    // Assumes fixed position with left/top set (or at least measurable via rect)
-    const r = elm.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    ensureFixedTopLeft(elm);
-
-    const curLeft = parseFloat(elm.style.left) || r.left;
-    const curTop = parseFloat(elm.style.top) || r.top;
-
-    const nextLeft = clamp(curLeft, margin, vw - r.width - margin);
-    const nextTop = clamp(curTop, margin, vh - r.height - margin);
-
-    elm.style.left = `${nextLeft}px`;
-    elm.style.top = `${nextTop}px`;
-  }
-
   const iconSvg = `
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6"/>
@@ -100,141 +69,18 @@ export function createCalculatorWidget(options = {}) {
     </svg>
   `;
 
-  const panel = el(
-    "section",
-    { class: "calc-panel", hidden: true, role: "dialog", "aria-label": t("calcTitle") },
-    el(
-      "div",
-      { class: "calc-header" },
-      el("div", { class: "calc-title" }, t("calcTitle")),
-      el("div", { class: "calc-spacer" }),
-      el("button", { class: "calc-close", type: "button" }, t("close"))
-    ),
-    el(
-      "div",
-      { class: "calc-display" },
-      el(
-        "div",
-        { class: "calc-history-row" },
-        el("button", {
-          class: "calc-history-btn",
-          type: "button",
-          "aria-label": t("history"),
-          html: `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
-            <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>`
-        }),
-        el("div", { class: "calc-history-text" })
-      ),
-      el("input", {
-        class: "calc-expr",
-        type: "text",
-        inputmode: isTouchLike ? "none" : "decimal",
-        autocomplete: "off",
-        spellcheck: "false",
-      })
-    ),
-    el(
-      "div",
-      { class: "calc-history-sheet", hidden: true, "aria-hidden": "true" },
-      el("div", { class: "calc-history-sheet-header" },
-        el("span", {}, t("history")),
-        el("button", { class: "calc-history-clear", type: "button" }, t("clear"))
-      ),
-      el("div", { class: "calc-history-list" })
-    ),
-    el("div", { class: "calc-keys" })
-  );
-
-  const exprInput = panel.querySelector(".calc-expr");
-
-  if (isTouchLike) {
-    exprInput.setAttribute("readonly", "");
-    exprInput.setAttribute("inputmode", "none");
-
-    // Prevent focus entirely (stronger than blur)
-    const blockFocus = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      exprInput.blur();
-    };
-
-    exprInput.addEventListener("pointerdown", blockFocus, { passive: false });
-    exprInput.addEventListener("touchstart", blockFocus, { passive: false });
-    exprInput.addEventListener("mousedown", blockFocus);
-    exprInput.addEventListener("click", blockFocus);
-    exprInput.addEventListener("focus", () => exprInput.blur());
-  }
-
-  const historyEl = panel.querySelector(".calc-history-text");
-  const historyBtn = panel.querySelector(".calc-history-btn");
-  const historySheet = panel.querySelector(".calc-history-sheet");
-  const historyList = panel.querySelector(".calc-history-list");
-  const historyClearBtn = panel.querySelector(".calc-history-clear");
-  const closeBtn = panel.querySelector(".calc-close");
-  const keys = panel.querySelector(".calc-keys");
-  const header = panel.querySelector(".calc-header");
-
-  const setHistorySheetOpen = (isOpen) => {
-    if (isOpen) {
-      renderHistoryList();
-      historySheet.hidden = false;
-      historySheet.setAttribute("aria-hidden", "false");
-      requestAnimationFrame(() => historySheet.classList.add("is-open"));
-      return;
-    }
-
-    historySheet.classList.remove("is-open");
-    historySheet.setAttribute("aria-hidden", "true");
-  };
-
-  historySheet.addEventListener("transitionend", (e) => {
-    if (e.propertyName !== "transform") return;
-    if (!historySheet.classList.contains("is-open")) {
-      historySheet.hidden = true;
-    }
-  });
-
-  function renderHistoryList() {
-    const history = loadHistory();
-    historyList.innerHTML = "";
-    if (history.length === 0) {
-      historyList.appendChild(el("div", { class: "calc-history-empty" }, t("noHistory")));
-      return;
-    }
-    for (const item of history) {
-      const row = el(
-        "button",
-        { class: "calc-history-item", type: "button" },
-        el("span", { class: "calc-history-item-expr" }, item.expr),
-        el("span", { class: "calc-history-item-result" }, item.result)
-      );
-      row.addEventListener("click", () => {
-        core.setExpr(item.result);
-        core.status = item.expr;
-        render();
-        setHistorySheetOpen(false);
-      });
-      historyList.appendChild(row);
-    }
-  }
-
-  historyBtn.addEventListener("click", () => {
-    setHistorySheetOpen(!historySheet.classList.contains("is-open"));
-  });
-
-  historyClearBtn.addEventListener("click", () => {
-    clearHistory();
-    renderHistoryList();
-  });
-
-  panel.addEventListener("click", (e) => {
-    if (!historySheet.classList.contains("is-open")) return;
-    if (!historySheet.contains(e.target) && !historyBtn.contains(e.target)) {
-      setHistorySheetOpen(false);
-    }
-  });
+  const {
+    panel,
+    exprInput,
+    historyEl,
+    historyBtn,
+    historySheet,
+    historyList,
+    historyClearBtn,
+    closeBtn,
+    keys,
+    header,
+  } = buildPanel({ t, isTouchLike });
 
   // Apply stored panel position (if any)
   {
@@ -251,149 +97,13 @@ export function createCalculatorWidget(options = {}) {
   // -------------------------
   // Panel drag implementation
   // -------------------------
-  function makePanelDraggable() {
-    let pointerDown = false;
-    let dragging = false;
-    let pointerId = null;
-
-    let startX = 0,
-      startY = 0;
-    let lastX = 0,
-      lastY = 0;
-    let originLeft = 0,
-      originTop = 0;
-
-    // Cache size to avoid layout thrash during move
-    let boxW = 0,
-      boxH = 0;
-
-    let rafId = 0;
-
-    function startDragNow(e) {
-      if (dragging) return;
-
-      ensureFixedTopLeft(panel);
-
-      const r = panel.getBoundingClientRect();
-      boxW = r.width;
-      boxH = r.height;
-
-      originLeft = parseFloat(panel.style.left) || r.left;
-      originTop = parseFloat(panel.style.top) || r.top;
-
-      dragging = true;
-      panel.classList.add("is-dragging");
-    }
-
-    function applyMove() {
-      rafId = 0;
-      if (!pointerDown || !dragging) return;
-
-      const dx = lastX - startX;
-      const dy = lastY - startY;
-
-      const margin = 8;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-
-      const nextLeft = clamp(originLeft + dx, margin, vw - boxW - margin);
-      const nextTop = clamp(originTop + dy, margin, vh - boxH - margin);
-
-      panel.style.left = `${nextLeft}px`;
-      panel.style.top = `${nextTop}px`;
-    }
-
-    function scheduleMove() {
-      if (rafId) return;
-      rafId = requestAnimationFrame(applyMove);
-    }
-
-    function endDrag() {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = 0;
-      }
-
-      if (!pointerDown) return;
-
-      pointerDown = false;
-
-      if (dragging) {
-        dragging = false;
-        panel.classList.remove("is-dragging");
-        clampElementToViewport(panel);
-
-        savePos({
-          ...(loadPos() || {}),
-          panel: { left: panel.style.left, top: panel.style.top },
-        });
-      }
-
-      pointerId = null;
-    }
-
-    header.addEventListener("pointerdown", (e) => {
-      if (e.target?.closest?.(".calc-close")) return;
-
-      // Mouse: left button only
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-
-      pointerDown = true;
-      pointerId = e.pointerId;
-
-      startX = lastX = e.clientX;
-      startY = lastY = e.clientY;
-
-      try {
-        header.setPointerCapture(pointerId);
-      } catch {
-        // ignore
-      }
-
-      // Mouse: start immediately (keep current perfect behavior)
-      if (e.pointerType === "mouse") {
-        startDragNow(e);
-        return;
-      }
-
-      // Touch/Pen: wait until movement threshold, but prevent scroll jitter
-      e.preventDefault();
-    });
-
-    header.addEventListener("pointermove", (e) => {
-      if (!pointerDown) return;
-
-      lastX = e.clientX;
-      lastY = e.clientY;
-
-      if (!dragging) {
-        const dx = Math.abs(lastX - startX);
-        const dy = Math.abs(lastY - startY);
-        if (dx > DRAG_THRESHOLD_PX || dy > DRAG_THRESHOLD_PX) {
-          startDragNow(e);
-        } else {
-          return;
-        }
-      }
-
-      // While dragging, keep it smooth and avoid excessive style writes
-      if (e.pointerType !== "mouse") e.preventDefault();
-      scheduleMove();
-    }, { passive: false });
-
-    header.addEventListener("pointerup", endDrag);
-    header.addEventListener("pointercancel", endDrag);
-
-    // Keep in bounds on resize
-    window.addEventListener("resize", () => {
-      if (panel.hidden) return;
-      clampElementToViewport(panel);
-      savePos({
-        ...(loadPos() || {}),
-        panel: { left: panel.style.left, top: panel.style.top },
-      });
-    });
-  }
+  makePanelDraggable({
+    panel,
+    header,
+    dragThresholdPx: DRAG_THRESHOLD_PX,
+    savePos,
+    loadPos,
+  });
 
   function keepInputEndVisible(input) {
     // Put caret at end (so the browser scroll logic is consistent)
@@ -404,8 +114,18 @@ export function createCalculatorWidget(options = {}) {
     input.scrollLeft = input.scrollWidth;
   }
 
-
-  makePanelDraggable();
+  initHistorySheet({
+    panel,
+    core,
+    historySheet,
+    historyBtn,
+    historyList,
+    historyClearBtn,
+    render,
+    t,
+    loadHistory,
+    clearHistory,
+  });
 
   function render({ keepEnd = false } = {}) {
     exprInput.value = core.expr ?? "";
@@ -477,8 +197,9 @@ export function createCalculatorWidget(options = {}) {
     }
   }
 
-  function pushToken(tok) {
+  function pushToken(tokenOrFn) {
     core.setExpr(exprInput.value);
+    const tok = typeof tokenOrFn === "function" ? tokenOrFn(core) : tokenOrFn;
     core.append(tok);
     render({ keepEnd: true });
     if (!isTouchLike) exprInput.focus({ preventScroll: true });
@@ -486,65 +207,17 @@ export function createCalculatorWidget(options = {}) {
 
   function act(fn) {
     core.setExpr(exprInput.value);
-    fn();
+    if (typeof fn === "function") fn(core);
     render({ keepEnd: true });
     if (!isTouchLike) exprInput.focus({ preventScroll: true });
   }
 
-  const secondaryLayout = [
-    { t: "√", cls: "op", on: () => act(() => core.sqrtTrailingNumber()) },
-    { t: "x²", cls: "op", on: () => act(() => core.squareTrailingNumber()) },
-    { t: "±", cls: "op", on: () => act(() => core.toggleSign()) },
-    { t: "⌫", cls: "", on: () => act(() => core.backspace()) },
-  ];
-
-  const layout = [
-    { t: "AC", cls: "danger", on: () => act(() => core.clear()) },
-    { t: "()", cls: "op", on: () => pushToken(core.smartParen()) },
-    { t: "%", cls: "op", on: () => pushToken("%") },
-    { t: "÷", cls: "op", on: () => pushToken("÷") },
-
-    { t: "7", on: () => pushToken("7") },
-    { t: "8", on: () => pushToken("8") },
-    { t: "9", on: () => pushToken("9") },
-    { t: "×", cls: "op", on: () => pushToken("×") },
-
-    { t: "4", on: () => pushToken("4") },
-    { t: "5", on: () => pushToken("5") },
-    { t: "6", on: () => pushToken("6") },
-    { t: "–", cls: "op", on: () => pushToken("–") },
-
-    { t: "1", on: () => pushToken("1") },
-    { t: "2", on: () => pushToken("2") },
-    { t: "3", on: () => pushToken("3") },
-    { t: "+", cls: "op", on: () => pushToken("+") },
-
-    { t: "0", cls: "zero", on: () => pushToken("0") },
-    { t: ".", on: () => pushToken(".") },
-    { t: "=", cls: "eq", on: () => doEval() },
-  ];
-
-  const secondaryKeys = el("div", { class: "calc-secondary-keys" });
-  for (const k of secondaryLayout) {
-    secondaryKeys.appendChild(
-      el(
-        "button",
-        { type: "button", class: `calc-key calc-key-secondary ${k.cls || ""}`.trim(), onclick: k.on },
-        k.t
-      )
-    );
-  }
-  keys.before(secondaryKeys);
-
-  for (const k of layout) {
-    keys.appendChild(
-      el(
-        "button",
-        { type: "button", class: `calc-key ${k.cls || ""}`.trim(), onclick: k.on },
-        k.t
-      )
-    );
-  }
+  buildKeypad({
+    keysContainer: keys,
+    pushToken,
+    act,
+    doEval,
+  });
 
   closeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
   closeBtn.addEventListener("pointerup", (e) => e.stopPropagation());
@@ -555,149 +228,6 @@ export function createCalculatorWidget(options = {}) {
 
   // launcher (floating button) unless user provided their own button
   let launcher = null;
-
-  // Launcher draggable helper (smooth touch, perfect mouse)
-  function makeLauncherDraggable(launcherEl) {
-    let pointerDown = false;
-    let dragging = false;
-
-    let startX = 0,
-      startY = 0;
-    let lastX = 0,
-      lastY = 0;
-    let originLeft = 0,
-      originTop = 0;
-
-    let boxW = 0,
-      boxH = 0;
-
-    let moved = false;
-    let rafId = 0;
-
-    function startDragNow() {
-      if (dragging) return;
-
-      ensureFixedTopLeft(launcherEl);
-
-      const r = launcherEl.getBoundingClientRect();
-      boxW = r.width;
-      boxH = r.height;
-
-      originLeft = parseFloat(launcherEl.style.left) || r.left;
-      originTop = parseFloat(launcherEl.style.top) || r.top;
-
-      dragging = true;
-      launcherEl.classList.add("is-dragging");
-    }
-
-    function applyMove() {
-      rafId = 0;
-      if (!pointerDown || !dragging) return;
-
-      const dx = lastX - startX;
-      const dy = lastY - startY;
-
-      // moved flag used to suppress toggle click
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
-
-      const margin = 8;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-
-      const nextLeft = clamp(originLeft + dx, margin, vw - boxW - margin);
-      const nextTop = clamp(originTop + dy, margin, vh - boxH - margin);
-
-      launcherEl.style.left = `${nextLeft}px`;
-      launcherEl.style.top = `${nextTop}px`;
-    }
-
-    function scheduleMove() {
-      if (rafId) return;
-      rafId = requestAnimationFrame(applyMove);
-    }
-
-    function endDrag() {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = 0;
-      }
-
-      if (!pointerDown) return;
-      pointerDown = false;
-
-      if (dragging) {
-        dragging = false;
-        launcherEl.classList.remove("is-dragging");
-
-        clampElementToViewport(launcherEl);
-
-        savePos({
-          ...(loadPos() || {}),
-          launcher: { left: launcherEl.style.left, top: launcherEl.style.top },
-        });
-      }
-    }
-
-    launcherEl.addEventListener("pointerdown", (e) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-
-      pointerDown = true;
-      moved = false;
-
-      startX = lastX = e.clientX;
-      startY = lastY = e.clientY;
-
-      try {
-        launcherEl.setPointerCapture(e.pointerId);
-      } catch {
-        // ignore
-      }
-
-      // Mouse: begin immediately (keep perfect behavior)
-      if (e.pointerType === "mouse") {
-        startDragNow();
-        return;
-      }
-
-      // Touch/Pen: only begin after threshold to keep tap-to-open reliable
-      e.preventDefault();
-    });
-
-    launcherEl.addEventListener("pointermove", (e) => {
-      if (!pointerDown) return;
-
-      lastX = e.clientX;
-      lastY = e.clientY;
-
-      if (!dragging) {
-        const dx = Math.abs(lastX - startX);
-        const dy = Math.abs(lastY - startY);
-
-        if (dx > DRAG_THRESHOLD_PX || dy > DRAG_THRESHOLD_PX) {
-          startDragNow();
-        } else {
-          return;
-        }
-      }
-
-      if (e.pointerType !== "mouse") e.preventDefault();
-      scheduleMove();
-    }, { passive: false });
-
-    launcherEl.addEventListener("pointerup", (e) => {
-      endDrag();
-      // if user dragged, don't treat it as a click
-      if (moved) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    });
-
-    launcherEl.addEventListener("pointercancel", endDrag);
-
-    // Return a function for checking if last interaction moved
-    return () => moved;
-  }
 
   if (floating) {
     launcher = el("button", {
@@ -720,7 +250,12 @@ export function createCalculatorWidget(options = {}) {
     }
 
     // Make launcher draggable and guard toggle on drag
-    const launcherMoved = makeLauncherDraggable(launcher);
+    const launcherMoved = makeLauncherDraggable({
+      launcherEl: launcher,
+      dragThresholdPx: DRAG_THRESHOLD_PX,
+      savePos,
+      loadPos,
+    });
 
     launcher.addEventListener("click", (e) => {
       // If the last interaction was a drag, skip toggle
