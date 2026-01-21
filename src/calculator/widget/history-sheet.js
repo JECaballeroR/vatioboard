@@ -58,7 +58,7 @@ export function initHistorySheet({
       const row = el(
         "button",
         { class: "calc-history-item", type: "button" },
-        el("span", { class: "calc-history-item-expr" }, item.expr),
+        el("span", { class: "calc-history-item-expr" }, toDisplay(item.expr, settings)),
         el(
           "span",
           { class: "calc-history-item-result" },

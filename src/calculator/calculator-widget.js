@@ -178,7 +178,7 @@ export function createCalculatorWidget(options = {}) {
       }
     }
 
-    historyEl.textContent = core.status ?? "";
+    historyEl.textContent = toDisplay(core.status, settings) ?? "";
 
     if (keepEnd) keepInputEndVisible(exprInput);
   }
