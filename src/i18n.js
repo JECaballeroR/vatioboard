@@ -15,11 +15,16 @@ const translations = {
     clear: 'Clear',
     savePng: 'Save PNG',
     calculator: 'Calculator',
+    energy: 'Energy',
 
     // Aria labels
     presetColors: 'Preset colors',
     moreColors: 'More colors',
     openCalculator: 'Open calculator',
+    openEnergy: 'Open energy calculator',
+
+    // Energy Calculator
+    energyTitle: 'EV Trip Cost',
 
     // Status messages
     ready: 'Ready',
@@ -71,11 +76,16 @@ const translations = {
     clear: 'Limpiar',
     savePng: 'Guardar PNG',
     calculator: 'Calculadora',
+    energy: 'Energía',
 
     // Aria labels
     presetColors: 'Colores predefinidos',
     moreColors: 'Más colores',
     openCalculator: 'Abrir calculadora',
+    openEnergy: 'Abrir calculadora de energía',
+
+    // Energy Calculator
+    energyTitle: 'Costo de Viaje EV',
 
     // Status messages
     ready: 'Listo',

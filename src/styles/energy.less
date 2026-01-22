@@ -1,0 +1,97 @@
+/* Energy Calculator Widget */
+/* Uses same CSS variables as calculator */
+
+/* Floating launcher button */
+.energy-fab{
+  position: fixed;
+  right: 76px;
+  bottom: 16px;
+  z-index: 2147483646;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: 1px solid var(--calc-border);
+  background: var(--calc-surface);
+  color: var(--calc-text);
+  box-shadow: var(--calc-shadow);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--calc-font);
+  -webkit-tap-highlight-color: transparent;
+}
+.energy-fab:active{ transform: translateY(1px); }
+.energy-fab svg{ width: 22px; height: 22px; opacity: .9; }
+
+/* Panel */
+.energy-panel{
+  position: fixed;
+  right: 16px;
+  bottom: 76px;
+  z-index: 2147483646;
+  width: 320px;
+  border-radius: var(--calc-radius);
+  border: 1px solid var(--calc-border);
+  background: var(--calc-surface);
+  color: var(--calc-text);
+  box-shadow: var(--calc-shadow);
+  overflow: hidden;
+  font-family: var(--calc-font);
+  -webkit-tap-highlight-color: transparent;
+}
+.energy-panel[hidden]{ display:none; }
+
+.energy-header{
+  display:flex;
+  align-items:center;
+  gap:2px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--calc-border);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.energy-header:active{
+  cursor: grabbing;
+}
+.energy-title{
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+.energy-spacer{ flex:1; }
+.energy-close{
+  border: 1px solid var(--calc-border);
+  background: transparent;
+  color: var(--calc-text);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.energy-body{
+  padding: 20px;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.energy-hello{
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--calc-accent);
+  margin: 0;
+}
+
+/* Dragging state */
+.energy-panel.is-dragging,
+.energy-fab.is-dragging{
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 420px){
+  .energy-panel{ width: calc(100vw - 24px); right: 12px; }
+  .energy-fab{ right: 76px; bottom: 12px; }
+}
