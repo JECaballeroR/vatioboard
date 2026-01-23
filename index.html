@@ -128,8 +128,38 @@
 
           <button id="clear" type="button" class="btn-danger" data-i18n="clear">Clear</button>
           <button id="save" type="button" class="btn-success" data-i18n="savePng">Save PNG</button>
-          <button id="openCalc" type="button" data-i18n="calculator">Calculator</button>
-          <button id="openEnergy" type="button" data-i18n="energy">Energy</button>
+          <div class="tool-buttons">
+            <button id="openCalc" type="button" class="btn-with-icon">
+              <span class="btn-icon" aria-hidden="true"></span>
+              <span data-i18n="calculator">Calculator</span>
+            </button>
+            <button id="openEnergy" type="button" class="btn-with-icon">
+              <span class="btn-icon" aria-hidden="true"></span>
+              <span data-i18n="energy">Energy</span>
+            </button>
+          </div>
+          <div class="tools-menu">
+            <button
+              id="toolsMenuBtn"
+              type="button"
+              class="tools-menu-btn"
+              data-i18n="tools"
+              aria-haspopup="menu"
+              aria-expanded="false"
+            >
+              Tools
+            </button>
+            <div id="toolsMenuList" class="tools-menu-list" role="menu" hidden>
+              <button id="openCalcMenu" type="button" role="menuitem" class="btn-with-icon">
+                <span class="btn-icon" aria-hidden="true"></span>
+                <span data-i18n="calculator">Calculator</span>
+              </button>
+              <button id="openEnergyMenu" type="button" role="menuitem" class="btn-with-icon">
+                <span class="btn-icon" aria-hidden="true"></span>
+                <span data-i18n="energy">Energy</span>
+              </button>
+            </div>
+          </div>
           <div class="right-stack" aria-label="Status and attribution">
             <span id="status" class="status" data-i18n="ready">Ready</span>
             <span class="attribution" aria-label="Creator attribution">

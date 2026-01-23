@@ -8,6 +8,7 @@ import { createEnergyCalculatorWidget } from "../energy/energy-calculator-widget
 import { createFloatingDock } from "../dock/floating-dock.js";
 import iro from "@jaames/iro";
 import { t, applyTranslations, toggleLang, getLang } from "../i18n.js";
+import { IconCalculator, IconEnergy } from "../icons.js";
 
 // Apply translations immediately
 applyTranslations();
@@ -22,16 +23,68 @@ langToggleBtn.addEventListener("click", () => {
 // Toolbar buttons
 const openCalcBtn = document.getElementById("openCalc");
 const openEnergyBtn = document.getElementById("openEnergy");
+const openCalcMenuBtn = document.getElementById("openCalcMenu");
+const openEnergyMenuBtn = document.getElementById("openEnergyMenu");
+const toolsMenuBtn = document.getElementById("toolsMenuBtn");
+const toolsMenuList = document.getElementById("toolsMenuList");
+
+function applyButtonIcon(button, icon) {
+  const iconSlot = button?.querySelector(".btn-icon");
+  if (!iconSlot) return;
+  iconSlot.innerHTML = icon;
+}
+
+applyButtonIcon(openCalcBtn, IconCalculator);
+applyButtonIcon(openCalcMenuBtn, IconCalculator);
+applyButtonIcon(openEnergyBtn, IconEnergy);
+applyButtonIcon(openEnergyMenuBtn, IconEnergy);
 
 // Floating dock with tool buttons
 const { calcBtn, energyBtn } = createFloatingDock();
 
-// Create widgets - both toolbar and dock buttons toggle the same instance
-const calcWidget = createCalculatorWidget({ button: openCalcBtn, floating: false });
-calcBtn.addEventListener("click", () => calcWidget.toggle());
+function setToolsMenuOpen(isOpen) {
+  if (!toolsMenuBtn || !toolsMenuList) return;
+  toolsMenuList.hidden = !isOpen;
+  toolsMenuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+}
 
-const energyWidget = createEnergyCalculatorWidget({ button: openEnergyBtn, floating: false });
-energyBtn.addEventListener("click", () => energyWidget.toggle());
+function closeToolsMenu() {
+  setToolsMenuOpen(false);
+}
+
+toolsMenuBtn?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  setToolsMenuOpen(toolsMenuList?.hidden ?? true);
+});
+
+document.addEventListener("click", (e) => {
+  if (!toolsMenuList || toolsMenuList.hidden) return;
+  if (toolsMenuBtn?.contains(e.target) || toolsMenuList.contains(e.target)) return;
+  closeToolsMenu();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeToolsMenu();
+});
+
+// Create widgets - all buttons toggle the same instance
+const calcWidget = createCalculatorWidget({ floating: false });
+const energyWidget = createEnergyCalculatorWidget({ button: null });
+
+const bindToggle = (btn, widget) => {
+  btn?.addEventListener("click", () => {
+    widget.toggle();
+    closeToolsMenu();
+  });
+};
+
+bindToggle(openCalcBtn, calcWidget);
+bindToggle(openCalcMenuBtn, calcWidget);
+bindToggle(calcBtn, calcWidget);
+
+bindToggle(openEnergyBtn, energyWidget);
+bindToggle(openEnergyMenuBtn, energyWidget);
+bindToggle(energyBtn, energyWidget);
 
   (function(){
     const canvas = document.getElementById("pad");
